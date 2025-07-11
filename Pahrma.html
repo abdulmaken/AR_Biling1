@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Home Billing Software</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f0f4f8;
+      transition: background 0.3s, color 0.3s;
+    }
+    header {
+      background: #007bff;
+      color: white;
+      padding: 10px 20px;
+    }
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo {
+      font-weight: bold;
+      font-size: 18px;
+    }
+    .home a {
+      margin: 0 10px;
+      color: white;
+      text-decoration: none;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .container {
+      padding: 20px;
+    }
+    .box, .summary, .history {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    label, select, input {
+      display: block;
+      margin-top: 10px;
+      width: 100%;
+    }
+    input, select {
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background-color: #28a745;
+      border: none;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 99;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+    }
+    .modal-content {
+      background-color: #fff;
+      margin: 10% auto;
+      padding: 20px;
+      border-radius: 10px;
+      width: 300px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .close:hover {
+      color: black;
+    }
+    .hidden { display: none; }
+
+    #loginScreen {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-color: #f8f9fa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    }
+    #loginBox {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      width: 300px;
+    }
+    #loginBox h2 {
+      text-align: center;
+    }
+    #loginBox input {
+      margin-bottom: 15px;
+    }
+    .dark-mode {
+      background: #1e1e1e;
+      color: white;
+    }
+    .dark-mode .box,
+    .dark-mode .summary,
+    .dark-mode .history,
+    .dark-mode .modal-content {
+      background: #333;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div id="loginScreen">
+    <div id="loginBox">
+      <h2>Login</h2>
+      <label for="userId">User ID:</label>
+      <input type="text" id="userId" placeholder="Enter ID" />
+      <label for="password">Password:</label>
+      <input type="password" id="password" placeholder="Enter Password" />
+      <button onclick="login()">Login</button>
+      <p id="loginMessage" style="color:red;"></p>
+    </div>
+  </div>
+
+  <div id="mainApp" class="hidden">
+    <header>
+      <nav>
+        <div class="logo">A&R | Developer</div>
+        <div class="home">
+          <a onclick="showSection('summarySection')">Summary</a>
+          <a onclick="showSection('historySection')">History</a>
+          <a onclick="openPaymentModal()">Daily Payment Update</a>
+          <a onclick="toggleDarkMode()">🌓 Mode</a>
+        </div>
+      </nav>
+    </header>
+
+    <div class="container">
+      <div class="box">
+        <h2>Home Billing</h2>
+
+        <label for="customer">Select Customer:</label>
+        <select id="customer" onchange="updateCustomer()">
+          <option value="Galaxy Pharmacy">Galaxy Pharmacy</option>
+          <option value="Pharma Mart">Pharma Mart</option>
+        </select>
+
+        <label for="product">Choose a Product:</label>
+        <select id="product">
+          <option value="Hizin 10mg">Hizin 10mg</option>
+          <option value="Esmond 40mg">Esmond 40mg</option>
+          <option value="Esmond 20mg">Esmond 20mg</option>
+          <option value="Nutra Gink">Nutra Gink</option>
+        </select>
+
+        <label for="quantity">Enter Quantity:</label>
+        <input type="number" id="quantity" min="1" placeholder="Enter quantity">
+        <button onclick="addToSummary()">Add</button>
+      </div>
+
+      <div id="summarySection" class="summary">
+        <h2>Product Summary</h2>
+        <table id="summaryTable">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Qty</th>
+              <th>Unit Price</th>
+              <th>Total</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <p><strong>Total Quantity:</strong> <span id="totalQty">0</span></p>
+        <p><strong>Grand Total:</strong> Rs. <span id="grandTotal">0</span></p>
+      </div>
+
+      <div id="paymentModal" class="modal">
+        <div class="modal-content">
+          <span class="close" onclick="closePaymentModal()">&times;</span>
+          <h3>Daily Payment Update</h3>
+          <p><strong>Total Bill:</strong> Rs. <span id="modalTotal">0</span></p>
+          <label for="paidAmount">Amount Paid Today:</label>
+          <input type="number" id="paidAmount" placeholder="Enter amount paid">
+          <p><strong>Remaining:</strong> Rs. <span id="remainingAmount" style="color:red;">0</span></p>
+          <button onclick="updateRemaining()">Update</button>
+        </div>
+      </div>
+
+      <div id="historySection" class="history hidden">
+        <h2>Last 15 Days History</h2>
+        <table id="historyTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Grand Total</th>
+              <th>Remaining</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const prices = {
+      "Hizin 10mg": 79,
+      "Esmond 40mg": 240,
+      "Esmond 20mg": 130,
+      "Nutra Gink": 425
+    };
+
+    let customer = "Galaxy Pharmacy";
+    let summaryData = [];
+    let remaining = 0;
+
+    function updateCustomer() {
+      customer = document.getElementById("customer").value;
+      summaryData = JSON.parse(localStorage.getItem("summaryData_" + customer) || "[]");
+      updateSummaryTable();
+      showHistory();
+    }
+
+    function login() {
+      const id = document.getElementById("userId").value.trim();
+      const pass = document.getElementById("password").value.trim();
+      if (id === "Abdul" && pass === "0000") {
+        document.getElementById("loginScreen").style.display = "none";
+        document.getElementById("mainApp").classList.remove("hidden");
+        updateCustomer();
+      } else {
+        document.getElementById("loginMessage").innerText = "Invalid ID or Password.";
+      }
+    }
+
+    function addToSummary() {
+      const product = document.getElementById("product").value;
+      const quantity = parseInt(document.getElementById("quantity").value);
+      if (!quantity || quantity <= 0) {
+        alert("Please enter a valid quantity.");
+        return;
+      }
+
+      const price = prices[product];
+      const existing = summaryData.find(item => item.product === product);
+      if (existing) {
+        existing.quantity += quantity;
+        existing.total = existing.quantity * existing.price;
+      } else {
+        summaryData.push({ product, quantity, price, total: quantity * price });
+      }
+
+      localStorage.setItem("summaryData_" + customer, JSON.stringify(summaryData));
+      updateSummaryTable();
+      document.getElementById("quantity").value = '';
+    }
+
+    function removeItem(index) {
+      summaryData.splice(index, 1);
+      localStorage.setItem("summaryData_" + customer, JSON.stringify(summaryData));
+      updateSummaryTable();
+    }
+
+    function updateSummaryTable() {
+      const tbody = document.querySelector("#summaryTable tbody");
+      tbody.innerHTML = "";
+      let totalQty = 0;
+      let grandTotal = 0;
+      summaryData.forEach((item, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${item.product}</td>
+          <td>${item.quantity}</td>
+          <td>${item.price}</td>
+          <td>${item.total}</td>
+          <td><button onclick="removeItem(${index})">🗑️</button></td>
+        `;
+        tbody.appendChild(row);
+        totalQty += item.quantity;
+        grandTotal += item.total;
+      });
+      document.getElementById("totalQty").innerText = totalQty;
+      document.getElementById("grandTotal").innerText = grandTotal;
+      document.getElementById("modalTotal").innerText = grandTotal;
+      remaining = grandTotal;
+    }
+
+    function openPaymentModal() {
+      document.getElementById("paymentModal").style.display = "block";
+      document.getElementById("modalTotal").innerText = document.getElementById("grandTotal").innerText;
+      document.getElementById("remainingAmount").innerText = remaining;
+      document.getElementById("remainingAmount").style.color = remaining > 0 ? "red" : "green";
+    }
+
+    function closePaymentModal() {
+      document.getElementById("paymentModal").style.display = "none";
+    }
+
+    function updateRemaining() {
+      const paid = parseInt(document.getElementById("paidAmount").value);
+      if (isNaN(paid) || paid < 0) {
+        alert("Enter valid paid amount.");
+        return;
+      }
+
+      remaining -= paid;
+      if (remaining < 0) remaining = 0;
+
+      const today = new Date().toISOString().split('T')[0];
+      const key = "billingHistory_" + customer;
+      const history = JSON.parse(localStorage.getItem(key) || "[]");
+
+      history.push({ date: today, grandTotal: parseInt(document.getElementById("grandTotal").innerText), remaining });
+
+      const latest15 = history.slice(-15);
+      localStorage.setItem(key, JSON.stringify(latest15));
+      showHistory();
+
+      document.getElementById("remainingAmount").innerText = remaining;
+      document.getElementById("remainingAmount").style.color = remaining > 0 ? "red" : "green";
+      document.getElementById("paidAmount").value = '';
+      closePaymentModal();
+    }
+
+    function showHistory() {
+      const key = "billingHistory_" + customer;
+      const history = JSON.parse(localStorage.getItem(key) || "[]");
+      const tbody = document.querySelector("#historyTable tbody");
+      tbody.innerHTML = "";
+      history.forEach((entry, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${entry.date}</td>
+          <td>Rs. ${entry.grandTotal}</td>
+          <td>Rs. ${entry.remaining}</td>
+          <td><button onclick="deleteHistory(${index})">Delete</button></td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function deleteHistory(index) {
+      const key = "billingHistory_" + customer;
+      const history = JSON.parse(localStorage.getItem(key) || "[]");
+      history.splice(index, 1);
+      localStorage.setItem(key, JSON.stringify(history));
+      showHistory();
+    }
+
+    function showSection(id) {
+      document.getElementById("summarySection").classList.add("hidden");
+      document.getElementById("historySection").classList.add("hidden");
+      document.getElementById(id).classList.remove("hidden");
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark-mode");
+    }
+  </script>
+</body>
+</html>
